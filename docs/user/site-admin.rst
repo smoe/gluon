@@ -12,8 +12,8 @@ Infrastructure setup
 *Hardware*
 
 It all starts with a series of machines. There is
- * a web server
- * at least one, better two gateways
+*   a web server
+*   at least one, better two gateways
 It is advisable to have more than one physical machine for
 each gateway. It does not matter if these machines are true
 physical instances or virtual hosts, as long as these may have
@@ -30,14 +30,14 @@ any provider not supporting it.
 
 A typical Freifunk network will have a 10.XXX.0.0/16 network. The XXX should
 not be shared with another freifunk network, such that the InterCity VPN can
-be established. The page 
- http://wiki.freifunk.net/IP-Netze
+be established. The page http://wiki.freifunk.net/IP-Netze
 orchestrates the community, both for IPv4 (Ostholstein: 10.135.0.0/16) and
 IPv6 (Ostholstein: fd73:111:e824::/48).
 
 To describe later:
-* http://wiki.freifunk.net/AS-Nummern (ASN for Ostholstein: 65152)
-* api.freifunk.net einrichten
+
+*   http://wiki.freifunk.net/AS-Nummern (ASN for Ostholstein: 65152)
+*   api.freifunk.net einrichten
 
 IPv4
 
@@ -80,39 +80,39 @@ Server infrastructure
 
 Provider:  filoo.de provided subnet 2a00:12c0:1015:166::0/64 .
 
+Add users:
+
+    useradd --system fastd
+
+Add packages
+
+    apt-get install fastd batman-adv-dkms iptables-persistent tinc git resolvconf radvd lighttpd haveged openvpn
+
 Gateway 1 : Dynamic node 141.101.36.19 1GB Mem
-- IPv4 intern 10.135.0.8
-- IPv6 extern 2a00:12c0:1015:166::1:1
-- IPv6 intern fd73:111:e824::8
-- MAC Adresse intern d6:f3:ed:8a:00:01
-    - add users:
-        useradd --system fastd
-    - add packages
-        - fastd Public: d63097eb426e8f5016957cd5ee184c60a535d001ec498115a828885568ba9e9c
-        - batman-adv-dkms
-        - iptables-persistent
-        - tinc
-        
+
+*   IPv4 intern 10.135.0.8
+*   IPv6 extern 2a00:12c0:1015:166::1:1
+*   IPv6 intern fd73:111:e824::8
+*   fastd public hash: d63097eb426e8f5016957cd5ee184c60a535d001ec498115a828885568ba9e9c
+*   MAC address intern d6:f3:ed:8a:00:01
+
 Gateway 2: Dynamic node 141.101.36.67 1GB Mem
-- IPv4 intern 10.135.0.16
-- IPv6 extern 2a00:12c0:1015:166::1:2
+
+*   IPv4 intern 10.135.0.16
+*   IPv6 extern 2a00:12c0:1015:166::1:2
 
 Website: Dynamic node  512MB RAM
-- IPv4 extern 109.75.177.24
-- IPv6 extern 2a00:12c0:1015:166::1
-- add packages
-     fastd
-     batman-adv-dkms
-     apache2
-     jekyll
-     git
-     python3
-     exim4 konfiguriert fuer ostholstein.freifunk.net
+
+*   IPv4 extern 109.75.177.24
+*   IPv6 extern 2a00:12c0:1015:166::1
+*   add packages
+       apt-get install fastd batman-adv-dkms git resolvconf
+    and more packages because of web features
+       apt-get install apache2 jekyll python3 exim4 (configured for ostholstein.freifunk.net)
 
 
-
-Konfiguration der Gateways
---------------------------
+Gateway configuration
+---------------------
 
 *Firmware*
 
@@ -124,8 +124,25 @@ https://github.com/freifunk-gluon/site-ffhl and localise IP addresses etc for th
 
 *Gatewayconfig*
 
-Instructions can be found on http://luebeck.freifunk.net/wiki/gatewayconfig
-which comprise
+The initial /etc/network/interfaces file will look like
+
+      auto eth0
+      iface eth0 inet static
+               address 141.101.36.19
+               netmask 255.255.255.0
+               broadcast 141.101.36.255
+               gateway 141.101.36.1
+               dns-nameservers gw1.ostholstein.freifunk.net
+     
+     iface eth0 inet6 static
+         address 2a00:12c0:1015:166::1:1/48
+         up ip -6 route add 2a00:12c0:1015::1 dev eth0
+         down ip -6 route del 2a00:12c0:1015::1 dev eth0
+         up ip -6 route add default via 2a00:12c0:1015::1 dev eth0
+         down ip -6 route del default via 2a00:12c0:1015::1 dev eth0
+
+to then be extended for a few Freifunk-devices. Further instructions can be found on http://luebeck.freifunk.net/wiki/gatewayconfig
+which comprise the installation of the following packages as mentioned above
     debfoster -u bird bird6 isc-dhcp-server radvd lighttpd haveged openvpn
 Further, 
     apt-get install bind9 dnsutils
@@ -133,9 +150,7 @@ as a substitute for named and (yet missing in that description)
     apt-get install bridge-utils
 for brctl.
 
-/etc/modules:
-
-    batman-adv hinzugefuegt
+/etc/modules: add batman-adv
 
 /etc/hosts:
 
@@ -147,19 +162,17 @@ for brctl.
     10.135.0.48     gw6.ostholstein.freifunk.net gw1
     10.135.0.56     gw7.ostholstein.freifunk.net gw1
 
+At some point during startup, the gateway must initiate its role
+as a server in the batman network by invocating
+    batctl gw server
+This could optionally be performed upon the initiation of a contact
+with the anonymiser's in the respective init script - or elsewhere.
 
-batctl gw server - wird von mullvad mit gestartet
+Freifunk-Mesh configuration on Gateway
+--------------------------------------
 
-### Besonderheiten bei Gluon/Lübecker Setup ###
+*batman-adv*
 
-#### Next-Node Adresse ####
-in Lübeck: x.y.0.1 bzw. xxxx::1
-Diese Adresse "freihalten". Vorschlag: IPv4 erstes /29 reservieren, also 0..7
-
-
-### Installation der Freifunk-Mesh software auf Gateway ###
-
-#### batman-adv ###
 batman-adv legacy (von Gluon verwendet)
 $ cat <<EOCAT > /etc/apt/sources.list.d/99matthias.list
 deb http://repo.universe-factory.net/debian sid main
@@ -188,11 +201,11 @@ interface bat0
 *dhcpd*
 
 The configuration of the dhcpd is straight forward - just two caveats:
-* there is a slightly unusual is the large number subnet, a /21 that
-  the dhcpd distributes IPv4 numbers for, expressed by the range attribute.
-  This is different for every gateway.
-* all gateways and dhcpd with them are on the very same network, which is
-  a /18 if not a /17, i.e. 10.135.0.0 with netmask 255.255.192.0 . 
+*   there is a slightly unusual is the large number subnet, a /21 that
+    the dhcpd distributes IPv4 numbers for, expressed by the range attribute.
+    This is different for every gateway.
+*   all gateways and dhcpd with them are on the very same network, which is
+    a /18 if not a /17, i.e. 10.135.0.0 with netmask 255.255.192.0 . 
   
 Examples:
 
@@ -223,6 +236,8 @@ More on http://wiki.freifunk.net/DNS
 fastd VPN
 ---------
 
+The fastd provides the secured communication between the router and the gateway.
+
 Tunnelinterface mit batctl if add $IF hinzufügen.
 
 Beispielconfig (/etc/fastd/XXX/fastd.conf): z.B. XXX = ffoh-mesh-vpn
@@ -242,7 +257,6 @@ Beispielconfig (/etc/fastd/XXX/fastd.conf): z.B. XXX = ffoh-mesh-vpn
                 batctl if add $INTERFACE
         ";
 
-
 Dazu noch secret.conf anlegen, siehe: http://www.nilsschneider.net/2013/02/17/fastd-tutorial.html
 ggf. ein paar Secrets im Vorraus generieren für geplante Gateways und die Public Keys in der Firmware hinterlegen.
 Peers kommen dann in das Unterverzeichnis peers/. Bei Gateways noch eine remote Zeile eintragen! peers/ als GIT Repo ist praktisch. 
@@ -250,7 +264,8 @@ Peers kommen dann in das Unterverzeichnis peers/. Bei Gateways noch eine remote 
 Anonymising internet traffic - external server: IPv4 exit
 ---------------------------------------------------------
 
- install and configure mullvad
+install and configure mullvad
+
       - openvpn resolvconf
       - unzip
       - https://mullvad.net/en/setup/openvpn/ NICHT FOLGEN
@@ -259,15 +274,19 @@ Anonymising internet traffic - external server: IPv4 exit
 2. Routingtabelle anlegen (Policy Routing)
 Dort defaultroute über das Exit-VPN eintragen.
 Beispiel OpenVPN up script:
-ip route replace 0.0.0.0/1 via $5 table freifunk
-ip route replace 128.0.0.0/1 via $5 table freifunk
+    ip route replace 0.0.0.0/1 via $5 table freifunk
+    ip route replace 128.0.0.0/1 via $5 table freifunk
 Das $5 wird hierbei automatisch ersetzt durch die IP Nummer des anonyisierers. Dies laesst sich auch bestimmen ueber "ifconfig mullvad".
 Traffic aus dem Freifunk, z.B. vom Interface bat0 in Tabelle 42 (freifunk, siehe /etc/iproute2/rt_tables) umbiegen:
 ip rule add iif bat0 table freifunk
+
 # IPv6
+
 Wieder: Eigene Routingtabelle anlegen, analog zu v4. Allerdings reicht als "defaultroute" 2000::/3 aus.
 z.B über Sixxs Tunnel, ganzes /48 per NAT mappen. Stichwort: NPTV6
+
 Beispiel mit neoraider's NPTV6 Modulen:
+
         -A PREROUTING -d 2001:4dd0:ff00:9466::/64 -j MARK --set-xmark 0x2a/0xffffffff
         -A PREROUTING -d 2001:4dd0:ff00:9466::/64 -j DNPTV6 --to-destination fdef:ffc0:3dd7::/64 
         -A INPUT -s fdef:ffc0:3dd7::/64 -m mark --mark 0x2a -j SNPTV6 --to-source 2001:4dd0:ff00:9466::/64
@@ -279,6 +298,7 @@ Beispiel mit neoraider's NPTV6 Modulen:
 
 
 Gateway gw1 /etc/network/interfaces
+
     auto dummy
     iface dummy inet manual
         pre-up ip link add $IFACE address d6:f3:ed:8a:00:01 type dummy
@@ -381,7 +401,15 @@ https://github.com/tcatm/alfred-json
 Optional for special community spirit
 -------------------------------------
 https://github.com/MetaMeute/ffhl-dns
-# Configure mailing lists
-* MX-Record
-* PTR-Record
-* Mailman + z.B.Postfix
+Configure mailing lists
+*   MX-Record
+*   PTR-Record
+*   Mailman + z.B.Postfix
+
+
+### Peculiarities with the Gluon/Lübecker Setup ###
+
+#### Next-Node Adresse ####
+in Lübeck: x.y.0.1 bzw. xxxx::1
+Diese Adresse "freihalten". Vorschlag: IPv4 erstes /29 reservieren, also 0..7
+
