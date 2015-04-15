@@ -154,13 +154,15 @@ for brctl.
 
 /etc/hosts:
 
-    10.135.0.8      gw1.ostholstein.freifunk.net gw1
-    10.135.0.16     gw2.ostholstein.freifunk.net gw1
-    10.135.0.24     gw3.ostholstein.freifunk.net gw1
-    10.135.0.32     gw4.ostholstein.freifunk.net gw1
-    10.135.0.40     gw5.ostholstein.freifunk.net gw1
-    10.135.0.48     gw6.ostholstein.freifunk.net gw1
-    10.135.0.56     gw7.ostholstein.freifunk.net gw1
+<pre>
+10.135.0.8      gw1.ostholstein.freifunk.net gw1
+10.135.0.16     gw2.ostholstein.freifunk.net gw2
+10.135.0.24     gw3.ostholstein.freifunk.net gw3
+10.135.0.32     gw4.ostholstein.freifunk.net gw4
+10.135.0.40     gw5.ostholstein.freifunk.net gw5
+10.135.0.48     gw6.ostholstein.freifunk.net gw6
+10.135.0.56     gw7.ostholstein.freifunk.net gw7
+</pre>
 
 At some point during startup, the gateway must initiate its role
 as a server in the batman network by invocating
@@ -245,6 +247,7 @@ Beispielconfig (/etc/fastd/XXX/fastd.conf): z.B. XXX = ffoh-mesh-vpn
         log to syslog level verbose;
         user "fastd";
         interface "ffoh-mesh-vpn";
+        method "salsa2012+umac"; # WICHTIG!
         method "salsa2012+gmac"; # WICHTIG!
         method "xsalsa20-poly1305"; # evtl. nicht nötig
         bind 0.0.0.0:10000;
