@@ -101,6 +101,11 @@ Gateway 2: Dynamic node 141.101.36.67 1GB Mem
 *   IPv4 intern 10.135.0.16
 *   IPv6 extern 2a00:12c0:1015:166::1:2
 
+Gateway 3: test node
+
+*   IPv4 intern 10.135.0.56
+*   IPv6 extern 2a00:12c0:1015:166::1:7
+
 Website: Dynamic node  512MB RAM
 
 *   IPv4 extern 109.75.177.24
@@ -126,20 +131,22 @@ https://github.com/freifunk-gluon/site-ffhl and localise IP addresses etc for th
 
 The initial /etc/network/interfaces file will look like
 
-      auto eth0
-      iface eth0 inet static
-               address 141.101.36.19
-               netmask 255.255.255.0
-               broadcast 141.101.36.255
-               gateway 141.101.36.1
-               dns-nameservers gw1.ostholstein.freifunk.net
-     
-     iface eth0 inet6 static
-         address 2a00:12c0:1015:166::1:1/48
-         up ip -6 route add 2a00:12c0:1015::1 dev eth0
-         down ip -6 route del 2a00:12c0:1015::1 dev eth0
-         up ip -6 route add default via 2a00:12c0:1015::1 dev eth0
-         down ip -6 route del default via 2a00:12c0:1015::1 dev eth0
+<pre>
+auto eth0
+iface eth0 inet static
+  address 141.101.36.19
+  netmask 255.255.255.0
+  broadcast 141.101.36.255
+  gateway 141.101.36.1
+  dns-nameservers gw1.ostholstein.freifunk.net
+
+iface eth0 inet6 static
+  address 2a00:12c0:1015:166::1:1/48
+  up ip -6 route add 2a00:12c0:1015::1 dev eth0
+  down ip -6 route del 2a00:12c0:1015::1 dev eth0
+  up ip -6 route add default via 2a00:12c0:1015::1 dev eth0
+  down ip -6 route del default via 2a00:12c0:1015::1 dev eth0
+</pre>
 
 to then be extended for a few Freifunk-devices. Further instructions can be found on http://luebeck.freifunk.net/wiki/gatewayconfig
 which comprise the installation of the following packages as mentioned above
@@ -161,7 +168,7 @@ for brctl.
 10.135.0.32     gw4.ostholstein.freifunk.net gw4
 10.135.0.40     gw5.ostholstein.freifunk.net gw5
 10.135.0.48     gw6.ostholstein.freifunk.net gw6
-10.135.0.56     gw7.ostholstein.freifunk.net gw7
+10.135.0.56     gw7.ostholstein.freifunk.net gw-test
 </pre>
 
 At some point during startup, the gateway must initiate its role
@@ -222,9 +229,17 @@ Gateway 135.0.8
 Gateway 135.0.16
 
     subnet 10.135.0.0 netmask 255.255.192.0 {
-        range 10.135.16.0 10.135.31.255;
-        option routers 10.135.0.8;
-        option domain-name-servers 10.135.0.8;
+        range 10.135.16.0 10.135.23.255;
+        option routers 10.135.0.16;
+        option domain-name-servers 10.135.0.16;
+    }
+
+Gateway 135.0.56
+
+    subnet 10.135.0.0 netmask 255.255.192.0 {
+        range 10.135.56.0 10.135.63.255;
+        option routers 10.135.0.56;ip
+        option domain-name-servers 10.135.0.56;
     }
 
 DNS
