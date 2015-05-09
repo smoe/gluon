@@ -28,7 +28,8 @@ any provider not supporting it.
 
 *Distribution of IP network address space*
 
-A typical Freifunk network will have a 10.XXX.0.0/16 network. The XXX should
+A typical Freifunk network will have a <code>10.XXX.0.0/16</code> network.
+The <code>XXX</code> should
 not be shared with another freifunk network, such that the InterCity VPN can
 be established. The page http://wiki.freifunk.net/IP-Netze
 orchestrates the community, both for IPv4 (Ostholstein: 10.135.0.0/16) and
@@ -46,7 +47,7 @@ devices contacting the routers. The routers themselves all have static IPv6 numb
 and do not need any configuration beyond what is statically set in the firmware.
 The firmware is compiled individually for every Freifunk community.
 
-For the 32bittish IPv4, having the first 16 bit set leaves a seconda half of
+For the 32bittish IPv4, having the first 16 bit set leaves a second half of
 16 bits to be assigned. We think of it as a series of 256 8bittish /24 networks.
 Your milage may vary, but we decided to prepare every gateway to allow the management
 of 8 of these /24 networks, i.e. just above 2000 clients. This is not too many, since
@@ -82,11 +83,15 @@ Provider:  filoo.de provided subnet 2a00:12c0:1015:166::0/64 .
 
 Add users:
 
-    useradd --system fastd
+<pre>
+useradd --system fastd
+</pre>
 
 Add packages
 
-    apt-get install fastd batman-adv-dkms iptables-persistent tinc git resolvconf radvd lighttpd haveged openvpn
+<pre>
+apt-get install fastd batman-adv-dkms iptables-persistent tinc git resolvconf radvd lighttpd haveged openvpn
+</pre>
 
 Gateway 1 : Dynamic node 141.101.36.19 1GB Mem
 
@@ -118,6 +123,11 @@ Website: Dynamic node  512MB RAM
 
 Gateway configuration
 ---------------------
+
+Since 5/2015, Debian much like Ubuntu and others have systemd as a regular init system. Somewhat
+debated, it comes handy for an incremental understanding of the configuration. The Wiki of Lübeck
+has a neat introduction https://wiki.luebeck.freifunk.net/gatewayconfig meant for Arch Linux
+from which here presented fragments are borrowed.
 
 *Firmware*
 
@@ -157,7 +167,9 @@ as a substitute for named and (yet missing in that description)
     apt-get install bridge-utils
 for brctl.
 
-/etc/modules: add batman-adv
+/etc/modules:
+
+batman-adv
 
 /etc/hosts:
 
@@ -296,7 +308,9 @@ Beispiel OpenVPN up script:
     ip route replace 128.0.0.0/1 via $5 table freifunk
 Das $5 wird hierbei automatisch ersetzt durch die IP Nummer des anonyisierers. Dies laesst sich auch bestimmen ueber "ifconfig mullvad".
 Traffic aus dem Freifunk, z.B. vom Interface bat0 in Tabelle 42 (freifunk, siehe /etc/iproute2/rt_tables) umbiegen:
+<pre>
 ip rule add iif bat0 table freifunk
+</pre>
 
 # IPv6
 
@@ -327,7 +341,7 @@ Gateway gw1 /etc/network/interfaces
     iface bat0 inet static
         address 10.135.0.8/18
     iface bat0 inet6 static
-        address fd73:111:e824::8/64
+        address fd73:111:e824::1/64
 
 Initiation of IP forwarding
 
@@ -343,45 +357,57 @@ anything. This renders the router directly accessible from the outside - with IP
 
 Accession from the outside via the common IPv4 protocol is however not possible.
 Outbound traffic is masqueraded by the IP number of the gateway. Use this line
-    iptables -t nat -A POSTROUTING -s 10.135.0.0/18 -o eth0 -j MASQUERADE
+
+<pre>
+iptables -t nat -A POSTROUTING -s 10.135.0.0/18 -o eth0 -j MASQUERADE
+</pre>
+
 to have a direct connection of the Freifunk network to the outside world, albeit
 masqueraded. Use
-    iptables -t nat -A POSTROUTING -s 10.135.0.0/18 -o mullvad -j MASQUERADE
+
+<pre>
+iptables -t nat -A POSTROUTING -s 10.135.0.0/18 -o mullvad -j MASQUERADE
+</pre>
+
 to have all outbound traffic anonymised through your favorite external service.
 
 
-DNS Config in named.local.conf
+*DNS Config in named.local.conf*
 
-    zone "ffhl" IN {
-        type master;
-        file "ffhl/ffhl.zone";
-        allow-transfer { any; };
-    };
-    zone "130.10.in-addr.arpa" IN {
-        type master;
-        file "ffhl/10.130.zone";
-        allow-transfer { any; };
-    };
-    zone "7.d.d.3.0.c.f.f.f.e.d.f.ip6.arpa" IN {
-        type master;
-        file "ffhl/fdef:ffc0:3dd7.zone";
-        allow-transfer { any; };
-    };
+<pre>
+zone "ffhl" IN {
+    type master;
+    file "ffhl/ffhl.zone";
+    allow-transfer { any; };
+};
+zone "130.10.in-addr.arpa" IN {
+    type master;
+    file "ffhl/10.130.zone";
+    allow-transfer { any; };
+};
+zone "7.d.d.3.0.c.f.f.f.e.d.f.ip6.arpa" IN {
+    type master;
+    file "ffhl/fdef:ffc0:3dd7.zone";
+    allow-transfer { any; };
+};
+</pre>
 
 /etc/radvd.conf
 
-    interface bat0
+<pre>
+interface bat0
+{
+    AdvSendAdvert on;
+    IgnoreIfMissing on;
+    MaxRtrAdvInterval 200;
+    prefix fd73:111:e824::/64
     {
-        AdvSendAdvert on;
-        IgnoreIfMissing on;
-        MaxRtrAdvInterval 200;
-        prefix fd73:111:e824::/64
-        {
-        };
-        RDNSS fd73:111:e824::1:1
-        {
-        };
     };
+    RDNSS fd73:111:e824::1:1
+    {
+    };
+};
+</pre>
 
 Intercity-VPN
 -------------
