@@ -81,18 +81,6 @@ Server infrastructure
 
 Provider:  filoo.de provided subnet 2a00:12c0:1015:166::0/64 .
 
-Add users:
-
-<pre>
-useradd --system fastd
-</pre>
-
-Add packages
-
-<pre>
-apt-get install fastd batman-adv-dkms iptables-persistent tinc git resolvconf radvd lighttpd haveged openvpn
-</pre>
-
 Gateway 1 : Dynamic node 141.101.36.19 1GB Mem
 
 *   IPv4 intern 10.135.0.8
@@ -141,47 +129,73 @@ https://github.com/freifunk-gluon/site-ffhl and localise IP addresses etc for th
 
 The initial /etc/network/interfaces file will look like
 
-<pre>
-auto eth0
-iface eth0 inet static
-  address 141.101.36.19
-  netmask 255.255.255.0
-  broadcast 141.101.36.255
-  gateway 141.101.36.1
-  dns-nameservers gw1.ostholstein.freifunk.net
+  auto eth0
+  iface eth0 inet static
+    address 141.101.36.19
+    netmask 255.255.255.0
+    broadcast 141.101.36.255
+    gateway 141.101.36.1
+    dns-nameservers gw1.ostholstein.freifunk.net
 
-iface eth0 inet6 static
-  address 2a00:12c0:1015:166::1:1/48
-  up ip -6 route add 2a00:12c0:1015::1 dev eth0
-  down ip -6 route del 2a00:12c0:1015::1 dev eth0
-  up ip -6 route add default via 2a00:12c0:1015::1 dev eth0
-  down ip -6 route del default via 2a00:12c0:1015::1 dev eth0
-</pre>
+  iface eth0 inet6 static
+    address 2a00:12c0:1015:166::1:1/48
+    up ip -6 route add 2a00:12c0:1015::1 dev eth0
+    down ip -6 route del 2a00:12c0:1015::1 dev eth0
+    up ip -6 route add default via 2a00:12c0:1015::1 dev eth0
+    down ip -6 route del default via 2a00:12c0:1015::1 dev eth0
 
 to then be extended for a few Freifunk-devices. Further instructions can be found on http://luebeck.freifunk.net/wiki/gatewayconfig
-which comprise the installation of the following packages as mentioned above
-    debfoster -u bird bird6 isc-dhcp-server radvd lighttpd haveged openvpn
-Further, 
-    apt-get install bind9 dnsutils
+
+We suggest starting by adding a user for the fastd daemon:
+
+  useradd --system fastd
+
+
+
+*batman-adv*
+
+Packages for the legacy version of batman-adv are distributed by the author's repository. We need to prepare the apt tool for that repository:
+
+  cat <<EOCAT > /etc/apt/sources.list.d/99matthias.list
+  deb http://repo.universe-factory.net/debian sid main
+  EOCAT 
+  gpg --keyserver pgpkeys.mit.edu --recv-key 16EF3F64CB201D9C
+  gpg --fingerprint 16EF3F64CB201D9C
+
+If running an earlier version of Debian than jessie (version 8), then add backports
+echo "deb http://http.debian.net/debian wheezy-backports main" >> /etc/apt/sources.list
+
+Please compare the fingerprint with
+  #pub   4096R/CB201D9C 2014-01-08 [verfällt: 2016-01-08]
+  #  Schl.-Fingerabdruck = 6664 E7BD A6B6 6988 1EC5  2E75 16EF 3F64 CB20 1D9C
+and then decide to import that key into your package manager's keyring and update
+  gpg --export -a 16EF3F64CB201D9C|apt-key add -
+  apt-get update
+
+
+Add packages
+  apt-get install fastd batman-adv-dkms iptables-persistent tinc git resolvconf radvd haveged openvpn
+and further
+  apt-get install bird bird6 isc-dhcp-server bind9 dnsutils
 as a substitute for named and (yet missing in that description)
     apt-get install bridge-utils
 for brctl.
 
-/etc/modules:
+Try it with
+  modprobe batman-adv
+and have it auto-loaded at boot time with
+  echo batman-adv >> /etc/modules
 
-batman-adv
 
-/etc/hosts:
+You may decide not to wait for your name service setup for addressing nodes in your network, starting with the gateways. /etc/hosts you may augment with the following
 
-<pre>
-10.135.0.8      gw1.ostholstein.freifunk.net gw1
-10.135.0.16     gw2.ostholstein.freifunk.net gw2
-10.135.0.24     gw3.ostholstein.freifunk.net gw3
-10.135.0.32     gw4.ostholstein.freifunk.net gw4
-10.135.0.40     gw5.ostholstein.freifunk.net gw5
-10.135.0.48     gw6.ostholstein.freifunk.net gw6
-10.135.0.56     gw7.ostholstein.freifunk.net gw-test
-</pre>
+  10.135.0.8      gw1.ffoh gw1
+  10.135.0.16     gw2.ffoh gw2
+  10.135.0.24     gw3.ffoh gw3
+  10.135.0.32     gw4.ffoh gw4
+  10.135.0.40     gw5.ffoh gw5
+  10.135.0.48     gw6.ffoh gw6
+  10.135.0.56     gw7.ffoh gw-test
 
 At some point during startup, the gateway must initiate its role
 as a server in the batman network by invocating
@@ -189,20 +203,14 @@ as a server in the batman network by invocating
 This could optionally be performed upon the initiation of a contact
 with the anonymiser's in the respective init script - or elsewhere.
 
+To control, see the output of
+  batctl if
+  batctl o
+If no other nodes surface, check in particular if there is a contact node (set with remote for fastd) and if that node allows to be contacted on the fastd port, commonly set to 10000.
+
 Freifunk-Mesh configuration on Gateway
 --------------------------------------
 
-*batman-adv*
-
-batman-adv legacy (von Gluon verwendet)
-$ cat <<EOCAT > /etc/apt/sources.list.d/99matthias.list
-deb http://repo.universe-factory.net/debian sid main
-EOCAT 
-gpg --keyserver pgpkeys.mit.edu --recv-key 16EF3F64CB201D9C
-gpg --fingerprint 16EF3F64CB201D9C
-#pub   4096R/CB201D9C 2014-01-08 [verfällt: 2016-01-08]
-#  Schl.-Fingerabdruck = 6664 E7BD A6B6 6988 1EC5  2E75 16EF 3F64 CB20 1D9C
-gpg --export -a 16EF3F64CB201D9C|apt-key add -
 ## radvd konfigurieren
 Hauptsächlich RDNSS
 $ cat /etc/radvd.conf
@@ -254,6 +262,7 @@ Gateway 135.0.56
         option domain-name-servers 10.135.0.56;
     }
 
+
 DNS
 ---
 
@@ -261,6 +270,29 @@ Every gateway also serves as a DNS server. Their configuration is the
 same for all instances and shared also by a github directory.
 
 More on http://wiki.freifunk.net/DNS
+
+
+*DNS Config in named.local.conf*
+
+<pre>
+zone "ffhl" IN {
+    type master;
+    file "ffhl/ffhl.zone";
+    allow-transfer { any; };
+};
+zone "130.10.in-addr.arpa" IN {
+    type master;
+    file "ffhl/10.130.zone";
+    allow-transfer { any; };
+};
+zone "7.d.d.3.0.c.f.f.f.e.d.f.ip6.arpa" IN {
+    type master;
+    file "ffhl/fdef:ffc0:3dd7.zone";
+    allow-transfer { any; };
+};
+</pre>
+
+
 
 fastd VPN
 ---------
@@ -329,20 +361,6 @@ Beispiel mit neoraider's NPTV6 Modulen:
         -A POSTROUTING -s fdef:ffc0:3dd7::/64 -o sixxs -j SNPTV6 --to-source 2001:4dd0:ff00:9466::/64
 
 
-Gateway gw1 /etc/network/interfaces
-
-    auto dummy
-    iface dummy inet manual
-        pre-up ip link add $IFACE address d6:f3:ed:8a:00:01 type dummy
-        up ip link set up $IFACE
-        up batctl if add $IFACE
-        post-down ip link del $IFACE
-    auto bat0
-    iface bat0 inet static
-        address 10.135.0.8/18
-    iface bat0 inet6 static
-        address fd73:111:e824::1/64
-
 Initiation of IP forwarding
 
 Some  may recall that "echo 1 > /proc/net/..." which had the same effect but was lost after reboot
@@ -370,44 +388,6 @@ iptables -t nat -A POSTROUTING -s 10.135.0.0/18 -o mullvad -j MASQUERADE
 </pre>
 
 to have all outbound traffic anonymised through your favorite external service.
-
-
-*DNS Config in named.local.conf*
-
-<pre>
-zone "ffhl" IN {
-    type master;
-    file "ffhl/ffhl.zone";
-    allow-transfer { any; };
-};
-zone "130.10.in-addr.arpa" IN {
-    type master;
-    file "ffhl/10.130.zone";
-    allow-transfer { any; };
-};
-zone "7.d.d.3.0.c.f.f.f.e.d.f.ip6.arpa" IN {
-    type master;
-    file "ffhl/fdef:ffc0:3dd7.zone";
-    allow-transfer { any; };
-};
-</pre>
-
-/etc/radvd.conf
-
-<pre>
-interface bat0
-{
-    AdvSendAdvert on;
-    IgnoreIfMissing on;
-    MaxRtrAdvInterval 200;
-    prefix fd73:111:e824::/64
-    {
-    };
-    RDNSS fd73:111:e824::1:1
-    {
-    };
-};
-</pre>
 
 Intercity-VPN
 -------------
@@ -456,4 +436,10 @@ Configure mailing lists
 #### Next-Node Adresse ####
 in Lübeck: x.y.0.1 bzw. xxxx::1
 Diese Adresse "freihalten". Vorschlag: IPv4 erstes /29 reservieren, also 0..7
+
+Anonymising VPN with mullvad
+----------------------------
+
+Log into Mullvad account. Make sure to have a separate account for every three gateways.
+
 
