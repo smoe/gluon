@@ -287,3 +287,14 @@ $(eval $(call GluonModel,HORNETUB,hornet-ub,alfa-hornet-ub))
 $(eval $(call GluonModelAlias,HORNETUB,alfa-hornet-ub,alfa-ap121))
 $(eval $(call GluonModelAlias,HORNETUB,alfa-hornet-ub,alfa-ap121u))
 
+## Meraki
+
+# Meraki MR12/MR62
+$(eval $(call GluonProfile,MR12,rssileds))
+$(eval $(call GluonProfileFactorySuffix,MR12))
+$(eval $(call GluonModel,MR12,mr12,meraki-mr12-mr62))
+
+# Meraki MR16/MR66
+$(eval $(call GluonProfile,MR16,rssileds))
+$(eval $(call GluonProfileFactorySuffix,MR16))
+$(eval $(call GluonModel,MR16,mr16,meraki-mr16-mr66))
