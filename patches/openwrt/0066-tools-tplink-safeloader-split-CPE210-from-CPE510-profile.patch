@@ -28,7 +28,7 @@ diff --git a/tools/firmware-utils/src/tplink-safeloader.c b/tools/firmware-utils
 index 2e204aa..4938f74 100644
 --- a/tools/firmware-utils/src/tplink-safeloader.c
 +++ b/tools/firmware-utils/src/tplink-safeloader.c
-@@ -163,6 +163,15 @@ static const struct flash_partition_entry c2600_partitions[] = {
+@@ -163,6 +163,18 @@ static const struct flash_partition_entry c2600_partitions[] = {
  };
  
  /**
@@ -38,6 +38,9 @@ index 2e204aa..4938f74 100644
 +	"SupportList:\r\n"
 +	"CPE210(TP-LINK|UN|N300-2):1.0\r\n"
 +	"CPE210(TP-LINK|UN|N300-2):1.1\r\n"
++ "CPE210(TP-LINK|US|N300-2):1.1\r\n"
++ "CPE210(TP-LINK|EU|N300-2):1.1\r\n"
++ "CPE210(TP-LINK|CN|N300-2):1.1\r\n"
 +	"CPE220(TP-LINK|UN|N300-2):1.0\r\n"
 +	"CPE220(TP-LINK|UN|N300-2):1.1\r\n";
 +/**
